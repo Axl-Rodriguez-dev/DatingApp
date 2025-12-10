@@ -1,17 +1,20 @@
 import { Component, inject } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AccountService } from '../../core/services/account-service';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { ToastServices } from '../../core/services/toast-services';
 
 @Component({
   selector: 'app-nav',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink, RouterLinkActive],
   templateUrl: './nav.html',
   styleUrl: './nav.css',
 })
 export class Nav {
   protected account = inject(AccountService);
   private fb = inject(FormBuilder);
-  protected creds: any = {};
+  private toast = inject(ToastServices);
+  private router = inject(Router);
 
   form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
@@ -24,15 +27,19 @@ export class Nav {
       return;
     }
     this.account.login(this.form.getRawValue()).subscribe({
-      next: (response) => {
-        console.log('Login successful', response);
-        this.creds = {};
+      next: () => {
+        this.router.navigateByUrl('/members');
+        this.toast.show('Login successful', 'success');
+        this.form.reset();
       },
-      error: (error) => alert(error.message),
+      error: (error) => {
+        this.toast.show(error.error, 'error');
+      },
     });
   }
 
   logout() {
     this.account.logout();
+    this.router.navigateByUrl('/');
   }
 }
